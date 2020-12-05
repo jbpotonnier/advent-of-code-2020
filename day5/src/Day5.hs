@@ -1,6 +1,6 @@
 {-# LANGUAGE LambdaCase #-}
 
-module Day5 where
+module Day5 (module Day5) where
 
 import Data.Set (difference, member)
 
