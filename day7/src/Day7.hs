@@ -17,12 +17,9 @@ data Rule = Rule Color [(Integer, Color)]
 countBags :: [Rule] -> Color -> Integer
 countBags rules color = go color - 1
   where
-    go c =
-      let xs = ruleMap ! c
-       in 1
-            + if null xs
-              then 0
-              else sum [n * go c' | (n, c') <- xs]
+    go c = 1 + case ruleMap ! c of
+        [] -> 0
+        xs -> sum [n * go c' | (n, c') <- xs]
 
     ruleMap = Map.fromList [(h, xs) | Rule h xs <- rules]
 
