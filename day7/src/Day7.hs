@@ -17,7 +17,8 @@ data Rule = Rule Color [(Integer, Color)]
 countBags :: [Rule] -> Color -> Integer
 countBags rules color = go color - 1
   where
-    go c = 1 + case ruleMap ! c of
+    go c =
+      1 + case ruleMap ! c of
         [] -> 0
         xs -> sum [n * go c' | (n, c') <- xs]
 
