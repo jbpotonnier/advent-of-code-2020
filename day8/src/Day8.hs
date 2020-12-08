@@ -7,6 +7,7 @@ import Data.HashMap.Strict ((!?))
 import qualified Data.HashMap.Strict as HashMap
 import qualified Data.Set as Set
 import Data.Text (breakOn, strip, stripPrefix)
+import Relude.Extra (dup)
 
 data Instr = Acc Int | Jmp Int | Nop
   deriving (Show, Eq)
@@ -46,14 +47,8 @@ findLoop = go Set.empty
         | Set.member (currentInstr e) seen -> Looping e
         | otherwise -> go (Set.insert (currentInstr e) seen) es
 
-evalProg :: HashMap Int Instr -> Env -> [Env]
-evalProg prog env =
-  let instr = prog !? currentInstr env
-   in case instr of
-        Just i ->
-          let nextEnv = evalInstr env i
-           in nextEnv : evalProg prog nextEnv
-        Nothing -> []
+evalProg :: Program -> Env -> [Env]
+evalProg prog = unfoldr (\env -> dup . evalInstr env <$> prog !? currentInstr env)
 
 evalInstr :: Env -> Instr -> Env
 evalInstr env = \case

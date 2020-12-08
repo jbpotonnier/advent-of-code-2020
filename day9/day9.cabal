@@ -1,5 +1,5 @@
 cabal-version:       2.4
-name:                day8
+name:                day9
 version:             0.0.0.0
 synopsis:            See README for more info
 description:         See README for more info
@@ -21,7 +21,7 @@ common common-options
                      , text
   
   mixins:              base hiding (Prelude)
-                     , relude (Relude as Prelude, Relude.Extra)
+                     , relude (Relude as Prelude)
   
   ghc-options:         -Wall
                        -Wcompat
@@ -35,7 +35,6 @@ common common-options
   if impl(ghc >= 8.4)
     ghc-options:       -Wmissing-export-lists
                        -Wpartial-fields
-
 
   default-language:    Haskell2010
   default-extensions:  ConstraintKinds
@@ -55,14 +54,14 @@ common common-options
 library
   import:              common-options
   hs-source-dirs:      src
-  exposed-modules:     Day8
+  exposed-modules:     Day9
 
 test-suite test
   import:              common-options
   type:                exitcode-stdio-1.0
   hs-source-dirs:      test
   main-is:             Spec.hs
-  build-depends:       day8, hspec
+  build-depends:       day9, hspec
   ghc-options:         -threaded
                        -rtsopts
                        -with-rtsopts=-N
