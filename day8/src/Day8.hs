@@ -5,7 +5,6 @@ where
 
 import Data.HashMap.Strict ((!?))
 import qualified Data.HashMap.Strict as HashMap
-import Data.List (nub)
 import qualified Data.Set as Set
 import Data.Text (breakOn, strip, stripPrefix)
 
@@ -32,7 +31,7 @@ fixProgram =
     isLooping = \case Looping _ -> True; NotLooping _ -> False
 
 tryFix :: Program -> [Program]
-tryFix p = nub [HashMap.adjust mutate i p | i <- indices]
+tryFix p = [HashMap.adjust mutate i p | i <- indices]
   where
     indices = [k | (k, Jmp _) <- HashMap.toList p]
     mutate = \case Jmp _ -> Nop; instr -> instr
