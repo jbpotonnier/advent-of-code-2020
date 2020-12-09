@@ -19,6 +19,7 @@ common common-options
                      , containers
                      , unordered-containers
                      , text
+                     , split
   
   mixins:              base hiding (Prelude)
                      , relude (Relude as Prelude)
