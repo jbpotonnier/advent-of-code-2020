@@ -34,5 +34,5 @@ main = hspec $ do
     it "should find second star" $ do
       Just input <- readInput "./test/input.txt"
       let expected = [106599441, 133274893, 91957895, 97197365, 104060212, 142165569, 113972262, 109668776, 109871715, 115904771, 149614315, 122120055, 153890744, 122322994, 131935128, 140622865, 144628806]
-      findContiguousSet input 2089807806 `shouldBe` [expected]
+      take 1 (findContiguousSet input 2089807806) `shouldBe` [expected]
       sum [minimum expected, maximum expected] `shouldBe` 245848639

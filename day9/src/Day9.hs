@@ -7,7 +7,7 @@ import Data.List.Split (divvy)
 
 findContiguousSet :: [Int] -> Int -> [[Int]]
 findContiguousSet numbers invalidNumber =
-  filter (\s -> (sum s) == invalidNumber) $ (subLists numbers)
+  filter (\s -> sum s == invalidNumber) $ subLists numbers
 
 subLists :: [a] -> [[a]]
 subLists xs = mconcat [divvy s 1 xs | s <- [2 .. length xs]]
