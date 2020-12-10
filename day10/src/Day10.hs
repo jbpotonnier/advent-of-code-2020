@@ -4,28 +4,24 @@ module Day10
 where
 
 import Data.Foldable (Foldable (maximum))
+import Data.Function.Memoize (memoFix)
 import qualified Data.Map as Map
 import Data.Maybe (fromJust)
 
-star2 :: [Int] -> [[Int]]
-star2 xs = dump . cut . sort $ xs'
+star2 :: [Int] -> Int
+star2 xs = cut . sort $ xs'
   where
     xs' = (0 : fromList (sort xs)) ++ [maximum xs + 3]
 
-data Cut = Cut Int [Cut] | Empty
-  deriving (Show)
+cut :: [Int] -> Int
+cut = memoFix cut'
 
-dump :: Cut -> [[Int]]
-dump Empty = []
-dump (Cut i []) = [[i]]
-dump (Cut i cuts) = map ([i] ++) (concatMap dump cuts)
-
-cut :: [Int] -> Cut
-cut [] = Empty
-cut ys@(x : xs) =
-  let cs = [x' | x' <- xs, x' - x <= 3]
-      cuts = [cut (dropWhile (< c) ys) | c <- cs]
-   in Cut x cuts
+cut' :: (Num p, Num a, Ord a) => ([a] -> p) -> [a] -> p
+cut' _ [] = 0
+cut' f ys@(x : xs) =
+  let cs = [x' | x' <- take 4 xs, x' - x <= 3]
+      cuts = [f (dropWhile (< c) ys) | c <- cs]
+   in if null cuts then 1 else sum cuts
 
 differences :: [Int] -> [Int]
 differences xs = zipWith (flip (-)) xs' (tail' xs')

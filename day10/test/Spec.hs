@@ -25,9 +25,9 @@ main = hspec $ do
       (count . differences) xs `shouldBe` fromList [(1, 68), (3, 27)]
 
     it "should count arrangements" $ do
-      (length . star2) [28, 33, 18, 42, 31, 14, 46, 20, 48, 47, 24, 23, 49, 45, 19, 38, 39, 11, 1, 32, 25, 35, 8, 17, 7, 9, 4, 2, 34, 10, 3]
+       star2 [28, 33, 18, 42, 31, 14, 46, 20, 48, 47, 24, 23, 49, 45, 19, 38, 39, 11, 1, 32, 25, 35, 8, 17, 7, 9, 4, 2, 34, 10, 3]
         `shouldBe` 19208
 
     it "second star" $ do
       Just xs <- readInput readInt "./test/input.txt"
-      (length . star2) xs `shouldBe` 0
+      star2 xs `shouldBe` 43406276662336
