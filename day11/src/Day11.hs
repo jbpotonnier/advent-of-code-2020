@@ -3,7 +3,7 @@ module Day11
   )
 where
 
-import Data.Array.IArray (Array, bounds, inRange, listArray)
+import Data.Array.IArray (Array, IArray, Ix, bounds, inRange, listArray)
 import qualified Data.Array.IArray as Array
 import Data.List.Split (chunksOf)
 import qualified Data.Map.Strict as Map
@@ -45,12 +45,12 @@ update no initial@(p, s) ss = case s of
   Floor -> initial
 
 squares :: Layout -> [Pos] -> [Square]
-squares a = fmap (a Array.!) . filter (inRange (bounds a))
+squares a = fmap (a Array.!) . filter (inArray a)
 
 sees :: Layout -> Pos -> [Square]
 sees a pos = squares a . catMaybes $ [walk d continue pos | d <- directions]
   where
-    continue p = inRange (bounds (a :: Layout)) p && isTansparent p
+    continue p = inArray a p && isTansparent p
 
     isTansparent p = case (a :: Layout) Array.! p of
       Occupied -> False
@@ -108,6 +108,9 @@ readLayout = fmap toLayout . traverse readLine . lines
       listArray ((0, 0), (length xs - 1, length (head' xs) -1)) . mconcat $ xs
     readLine :: Text -> Maybe [Square]
     readLine = traverse readSquare . toString
+
+inArray :: (Ix a1, IArray a2 e) => a2 a1 e -> a1 -> Bool
+inArray a = inRange (bounds a)
 
 -------------------
 count :: (Ord k, Foldable t) => t k -> k -> Int
