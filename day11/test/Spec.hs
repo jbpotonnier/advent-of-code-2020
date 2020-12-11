@@ -23,7 +23,7 @@ main = hspec $ do
 
     it "first star" $ do
       Just a <- readInput "./test/input.txt"
-      let c = ((`count` Occupied) . Array.elems . converge applyRules) $ a
+      let c = ((`count` Occupied) . Array.elems . converge applyRules) a
       c `shouldBe` 2424
 
 printLayout :: Layout -> IO ()

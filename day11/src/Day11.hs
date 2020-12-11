@@ -26,7 +26,7 @@ applyRules a = a Array.// updates
     updates =
       [ update assoc adj
         | assoc@(p, _s) <- Array.assocs a,
-          let adj = adjacentsSquares a p
+          let adj = squares a (adjacents p)
       ]
 
 update :: (Pos, Square) -> [Square] -> (Pos, Square)
@@ -39,20 +39,23 @@ update initial@(p, s) adj = case s of
     | otherwise -> initial
   Floor -> initial
 
-adjacentsSquares :: Layout -> Pos -> [Square]
-adjacentsSquares a = fmap (a Array.!) . adjacentsPos a
-
-adjacentsPos :: Layout -> Pos -> [Pos]
-adjacentsPos a = filter (inRange (bounds a)) . adjacents
+squares :: Layout -> [Pos] -> [Square]
+squares a = fmap (a Array.!) . filter (inRange (bounds a))
 
 adjacents :: Pos -> [Pos]
-adjacents (x, y) =
-  [ p
+adjacents p = [step p d | d <- directions]
+
+step :: Pos -> (Int, Int) -> Pos
+step (x, y) (dx, dy) = (x + dx, y + dy)
+
+directions :: [(Int, Int)]
+directions =
+  [ d
     | let ds = [-1, 0, 1],
       dx <- ds,
       dy <- ds,
-      let p = (x + dx, y + dy),
-      p /= (x, y)
+      let d = (dx, dy),
+      d /= (0, 0)
   ]
 
 showLayout :: Layout -> Text
