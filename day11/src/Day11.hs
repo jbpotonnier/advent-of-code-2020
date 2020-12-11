@@ -12,6 +12,8 @@ import qualified Data.Text as Text
 
 type Pos = (Int, Int)
 
+type Dir = (Int, Int)
+
 type Layout = Array Pos Square
 
 data Square = Floor | Empty | Occupied
@@ -24,31 +26,47 @@ applyRules :: Layout -> Layout
 applyRules a = a Array.// updates
   where
     updates =
-      [ update assoc adj
-        | assoc@(p, _s) <- Array.assocs a,
-          let adj = squares a (adjacents p)
-      ]
+      [update 4 assoc (squares a (adjacents p)) | assoc@(p, _s) <- Array.assocs a]
 
-update :: (Pos, Square) -> [Square] -> (Pos, Square)
-update initial@(p, s) adj = case s of
+applyRules2 :: Layout -> Layout
+applyRules2 a = a Array.// updates
+  where
+    updates =
+      [update 5 assoc (sees a p) | assoc@(p, _s) <- Array.assocs a]
+
+update :: Int -> (Pos, Square) -> [Square] -> (Pos, Square)
+update no initial@(p, s) ss = case s of
   Empty
-    | count adj Occupied == 0 -> (p, Occupied)
+    | count ss Occupied == 0 -> (p, Occupied)
     | otherwise -> initial
   Occupied
-    | count adj Occupied >= 4 -> (p, Empty)
+    | count ss Occupied >= no -> (p, Empty)
     | otherwise -> initial
   Floor -> initial
 
 squares :: Layout -> [Pos] -> [Square]
 squares a = fmap (a Array.!) . filter (inRange (bounds a))
 
+sees :: Layout -> Pos -> [Square]
+sees a pos = squares a . catMaybes $ [walk d continue pos | d <- directions]
+  where
+    continue p = inRange (bounds (a :: Layout)) p && isTansparent p
+
+    isTansparent p = case (a :: Layout) Array.! p of
+      Occupied -> False
+      Empty -> False
+      Floor -> True
+
+walk :: Dir -> (Pos -> Bool) -> Pos -> Maybe Pos
+walk d continue = headMay . dropWhile continue . drop 1 . iterate (step d)
+
 adjacents :: Pos -> [Pos]
-adjacents p = [step p d | d <- directions]
+adjacents p = [step d p | d <- directions]
 
-step :: Pos -> (Int, Int) -> Pos
-step (x, y) (dx, dy) = (x + dx, y + dy)
+step :: Dir -> Pos -> Pos
+step (dx, dy) (x, y) = (x + dx, y + dy)
 
-directions :: [(Int, Int)]
+directions :: [Dir]
 directions =
   [ d
     | let ds = [-1, 0, 1],
@@ -62,7 +80,7 @@ showLayout :: Layout -> Text
 showLayout a = toLines . chunksOf (rowMaxBound + 1) . fmap showSquare . Array.elems $ a
   where
     toLines = Text.unlines . fmap mconcat
-    (_, (rowMaxBound, _)) = Array.bounds a
+    (_, (_, rowMaxBound)) = Array.bounds a
 
 showSquare :: Square -> Text
 showSquare = \case
@@ -78,8 +96,12 @@ readSquare = \case
   _ -> Nothing
 
 readInput :: FilePath -> IO (Maybe Layout)
-readInput path =
-  fmap toLayout . traverse readLine . lines <$> readFileText path
+readInput path = do
+  text <- readFileText path
+  pure $ readLayout text
+
+readLayout :: Text -> Maybe Layout
+readLayout = fmap toLayout . traverse readLine . lines
   where
     toLayout :: [[Square]] -> Layout
     toLayout xs =
@@ -88,16 +110,19 @@ readInput path =
     readLine = traverse readSquare . toString
 
 -------------------
-count :: (Ord k) => [k] -> k -> Int
+count :: (Ord k, Foldable t) => t k -> k -> Int
 count xs x = fromMaybe 0 (c Map.!? x)
   where
-    c = Map.fromListWith (+) . fmap (,1) $ xs
+    c = Map.fromListWith (+) . fmap (,1) . toList $ xs
 
 -- readInt :: Text -> Maybe Int
 -- readInt = readMaybe . toString
 
-head' :: [a] -> a
+head' :: [c] -> c
 head' = fromJust . viaNonEmpty head
+
+headMay :: [b] -> Maybe b
+headMay = viaNonEmpty head
 
 -- tail' :: [a] -> [a]
 -- tail' = fromJust . viaNonEmpty tail
