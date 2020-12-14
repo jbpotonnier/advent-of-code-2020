@@ -5,38 +5,28 @@ module Main (main) where
 import Aoc
 import Test.Hspec
 
-data Bus = Bus {busId :: Integer, busPos :: Integer}
+data Bus = Bus {delta :: Integer, freq :: Integer}
   deriving (Show, Eq)
 
 star2 :: [Maybe Integer] -> Integer
-star2 xs = head' (filter (satisfyAll filters) (enumerate firstBus))
-  where
-    filters = fmap mkPred bs
+star2 = solve 0 1 . convert
 
-    firstBus = head' bs
+solve :: Integer -> Integer -> [Bus] -> Integer
+solve timestamp jump = \case
+  [] -> timestamp
+  b : bs ->
+    let (ts, jmp) = g b timestamp jump
+     in solve ts jmp bs
 
-    enumerate (Bus {busId, busPos}) = [n - busPos | n <- [0, busId ..]]
-
-    bs :: [Bus]
-    bs = sortOn (\b -> - (busId b)) . convert $ xs
+g :: Bus -> Integer -> Integer -> (Integer, Integer)
+g b@Bus {delta, freq} ts jmp
+  | (ts + delta) `rem` freq == 0 = (ts, jmp * freq)
+  | otherwise = g b (ts + jmp) jmp
 
 convert :: [Maybe Integer] -> [Bus]
-convert = catMaybes . zipWith g [0 ..]
-  where
-    g i c = case c of
-      Just n -> Just $ Bus n i
-      Nothing -> Nothing
-
-isMultiple :: Integral a => a -> a -> Bool
-isMultiple n m = n `rem` m == 0
-
-satisfyAll :: Foldable t1 => t1 (t2 -> Bool) -> t2 -> Bool
-satisfyAll = foldl' pAnd (const True)
-  where
-    pAnd p1 p2 x = p1 x && p2 x
-
-mkPred :: Bus -> Integer -> Bool
-mkPred Bus {busId, busPos} n = (n + busPos) `isMultiple` busId
+convert =
+  mapMaybe (\case (_, Nothing) -> Nothing; (i, Just bid) -> Just (Bus i bid))
+    . zip [0 ..]
 
 main :: IO ()
 main = hspec $ do
@@ -47,7 +37,7 @@ main = hspec $ do
 
     it "convert" $ do
       convert [Just 7, Just 13, Nothing, Nothing, Just 59, Nothing, Just 31, Just 19]
-        `shouldBe` [Bus {busId = 7, busPos = 0}, Bus {busId = 13, busPos = 1}, Bus {busId = 59, busPos = 4}, Bus {busId = 31, busPos = 6}, Bus {busId = 19, busPos = 7}]
+        `shouldBe` [Bus {freq = 7, delta = 0}, Bus {freq = 13, delta = 1}, Bus {freq = 59, delta = 4}, Bus {freq = 31, delta = 6}, Bus {freq = 19, delta = 7}]
 
     it "star 2" $ do
       star2 [Just 7, Just 13, Nothing, Nothing, Just 59, Nothing, Just 31, Just 19]
@@ -63,7 +53,7 @@ main = hspec $ do
 
       star2 [Just 1789, Just 37, Just 47, Just 1889] `shouldBe` 1202161486
 
-    fit "star 2 result" $ do
+    it "star 2 result" $ do
       star2
         [Just 37, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Just 41, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Just 601, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Just 19, Nothing, Nothing, Nothing, Nothing, Just 17, Nothing, Nothing, Nothing, Nothing, Nothing, Just 23, Nothing, Nothing, Nothing, Nothing, Nothing, Just 29, Nothing, Just 443, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Just 13]
-        `shouldBe` 1
+        `shouldBe` 379786358533423
