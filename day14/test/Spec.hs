@@ -23,19 +23,24 @@ main = hspec $ do
 
     it "convert to binary" $ do
       toBinary 11
-        `shouldBe` fromList [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, True, False, True, True]
+        `shouldBe` [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, True, False, True, True]
 
       toBinary 73
-        `shouldBe` fromList [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, True, False, False, True, False, False, True]
+        `shouldBe` [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, True, False, False, True, False, False, True]
 
     it "convert from binary" $ do
-      (fromBinary . fromList) [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, True, False, True, True]
+      fromBinary [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, True, False, True, True]
         `shouldBe` 11
 
-      (fromBinary . fromList) [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, True, False, False, True, False, False, True]
+      fromBinary [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, True, False, False, True, False, False, True]
         `shouldBe` 73
 
     it "star 1" $ do
       instrs <- readInput "./test/input.txt"
       let ComputeState {memory} = executeProgram instrs
+      sum memory `shouldBe` 9879607673316
+
+    it "star 2" $ do
+      instrs <- readInput "./test/input.txt"
+      let ComputeState {memory} = executeProgram2 instrs
       sum memory `shouldBe` 9879607673316

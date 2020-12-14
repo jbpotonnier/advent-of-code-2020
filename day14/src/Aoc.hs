@@ -7,8 +7,6 @@ where
 
 import qualified Data.Map.Strict as Map
 import Data.Maybe (fromJust)
-import Data.Vector (Vector)
-import qualified Data.Vector as V
 import Text.Megaparsec
 import qualified Text.Megaparsec as P
 import Text.Megaparsec.Char
@@ -20,7 +18,7 @@ data Instr w
   | Mem w w
   deriving (Show, Eq)
 
-type Binary = Vector Bool
+type Binary = [Bool]
 
 data ComputeState w = ComputeState
   { memory :: Map w w,
@@ -30,20 +28,43 @@ data ComputeState w = ComputeState
 
 data MaskValue = M0 | M1 | MX deriving (Show, Eq)
 
+executeProgram2 :: [Instr Integer] -> ComputeState Integer
+executeProgram2 = foldl' executeInstr2 initialComputeState
+
+executeInstr2 :: ComputeState Integer -> Instr Integer -> ComputeState Integer
+executeInstr2 computeState@ComputeState {currentMask} = \case
+  Mask mask -> computeState {currentMask = mask}
+  Mem address value -> insertAtAll (allAddresses address) value computeState
+  where
+    allAddresses :: Integer -> [Integer]
+    allAddresses = fmap fromBinary . applyMask currentMask . toBinary
+
+    applyMask :: [MaskValue] -> [Bool] -> [[Bool]]
+    applyMask mvs bs = zipWithM g mvs bs
+
+    g :: MaskValue -> Bool -> [Bool]
+    g mv bv = case mv of
+      M0 -> [bv]
+      M1 -> [True]
+      MX -> [False, True]
+
+    insertAtAll :: [Integer] -> Integer -> ComputeState Integer -> ComputeState Integer
+    insertAtAll as v s = foldl' (insertAt v) s as
+
+    insertAt :: Integer -> ComputeState Integer -> Integer -> ComputeState Integer
+    insertAt v s@ComputeState {memory} a = s {memory = Map.insert a v memory}
+
 executeProgram :: [Instr Integer] -> ComputeState Integer
 executeProgram = foldl' executeInstr initialComputeState
-
-initialComputeState :: ComputeState w
-initialComputeState = ComputeState Map.empty []
 
 executeInstr :: ComputeState Integer -> Instr Integer -> ComputeState Integer
 executeInstr s@ComputeState {currentMask, memory} = \case
   Mask mask -> s {currentMask = mask}
   Mem address value -> s {memory = Map.insert address (applyMask currentMask value) memory}
-
-applyMask :: [MaskValue] -> Integer -> Integer
-applyMask mask = fromBinary . fromList . applyMaskToBinary mask . toList . toBinary
   where
+    applyMask :: [MaskValue] -> Integer -> Integer
+    applyMask mask = fromBinary . applyMaskToBinary mask . toBinary
+
     applyMaskToBinary :: [MaskValue] -> [Bool] -> [Bool]
     applyMaskToBinary = zipWith g
 
@@ -51,6 +72,9 @@ applyMask mask = fromBinary . fromList . applyMaskToBinary mask . toList . toBin
       M0 -> False
       M1 -> True
       MX -> bv
+
+initialComputeState :: ComputeState w
+initialComputeState = ComputeState Map.empty []
 
 toBinary :: Integer -> Binary
 toBinary = fromList . pad 36 False . reverse . fmap integerToBool . go
