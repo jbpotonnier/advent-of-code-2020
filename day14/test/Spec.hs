@@ -3,7 +3,6 @@
 module Main (main) where
 
 import Aoc
-import qualified Data.Map.Strict as Map
 import Test.Hspec
 
 main :: IO ()
@@ -12,7 +11,7 @@ main = hspec $ do
     it "parse example" $ do
       instrs <- readInput "./test/example.txt"
       instrs
-        `shouldBe` [ Mask [(29, True), (34, False)],
+        `shouldBe` [ Mask [MX, MX, MX, MX, MX, MX, MX, MX, MX, MX, MX, MX, MX, MX, MX, MX, MX, MX, MX, MX, MX, MX, MX, MX, MX, MX, MX, MX, MX, M1, MX, MX, MX, MX, M0, MX],
                      Mem 8 11,
                      Mem 7 101,
                      Mem 8 0
@@ -35,14 +34,6 @@ main = hspec $ do
 
       (fromBinary . fromList) [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, True, False, False, True, False, False, True]
         `shouldBe` 73
-
-    it "execute program" $ do
-      instrs <- readInput "./test/example.txt"
-      executeProgram instrs
-        `shouldBe` ComputeState
-          { memory = fromList [(7, 101), (8, 64)],
-            currentMask = [(29, True), (34, False)]
-          }
 
     it "star 1" $ do
       instrs <- readInput "./test/input.txt"

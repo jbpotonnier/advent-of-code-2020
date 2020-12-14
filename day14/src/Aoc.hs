@@ -16,7 +16,7 @@ import Text.Megaparsec.Char
 type Parser = Parsec Void Text
 
 data Instr w
-  = Mask [(Int, Bool)]
+  = Mask [MaskValue]
   | Mem w w
   deriving (Show, Eq)
 
@@ -24,9 +24,11 @@ type Binary = Vector Bool
 
 data ComputeState w = ComputeState
   { memory :: Map w w,
-    currentMask :: [(Int, Bool)]
+    currentMask :: [MaskValue]
   }
   deriving (Show, Eq)
+
+data MaskValue = M0 | M1 | MX deriving (Show, Eq)
 
 executeProgram :: [Instr Integer] -> ComputeState Integer
 executeProgram = foldl' executeInstr initialComputeState
@@ -39,8 +41,16 @@ executeInstr s@ComputeState {currentMask, memory} = \case
   Mask mask -> s {currentMask = mask}
   Mem address value -> s {memory = Map.insert address (applyMask currentMask value) memory}
 
-applyMask :: [(Int, Bool)] -> Integer -> Integer
-applyMask mask v = fromBinary (toBinary v V.// mask)
+applyMask :: [MaskValue] -> Integer -> Integer
+applyMask mask = fromBinary . fromList . applyMaskToBinary mask . toList . toBinary
+  where
+    applyMaskToBinary :: [MaskValue] -> [Bool] -> [Bool]
+    applyMaskToBinary = zipWith g
+
+    g mv bv = case mv of
+      M0 -> False
+      M1 -> True
+      MX -> bv
 
 toBinary :: Integer -> Binary
 toBinary = fromList . pad 36 False . reverse . fmap integerToBool . go
@@ -88,15 +98,13 @@ readInput path = mapMaybe readLine . lines <$> readFileText path
     wordParser :: Parser Integer
     wordParser = readInteger . toText <$> P.some digitChar
 
-    readMask :: String -> [(Int, Bool)]
-    readMask =
-      fmap (second toBool)
-        . filter (\(_, c) -> c /= 'X')
-        . zip [0 ..]
+    readMask :: String -> [MaskValue]
+    readMask = fmap toMask
       where
-        toBool = \case
-          '1' -> True
-          '0' -> False
+        toMask = \case
+          '1' -> M1
+          '0' -> M0
+          'X' -> MX
           c -> error $ "toBool:" <> show c <> "is not 0 or 1"
 
 -----------------------------------
