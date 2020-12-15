@@ -6,18 +6,20 @@ where
 import qualified Data.Map.Strict as Map
 import Data.Maybe (fromJust)
 
-speak :: [Int] -> [Int]
-speak xs = start ++ next (length start) initSeen (last' xs)
+speak :: [Int] -> Int -> Int
+speak xs end = next (length start) (end - 1) initSeen (last' xs)
   where
     initSeen = Map.fromList [(i, v) | (i, v) <- zip start [0 ..]]
     start = init' xs
 
-next :: Int -> Map Int Int -> Int -> [Int]
-next i seen x =
-  let x' = case seen Map.!? x of
-        Nothing -> 0
-        Just b -> i - b
-   in x : next (i + 1) (Map.insert x i seen) x'
+next :: Int -> Int -> Map Int Int -> Int -> Int
+next i end seen x
+  | i == end = x
+  | otherwise =
+    let x' = case seen Map.!? x of
+          Nothing -> 0
+          Just b -> i - b
+     in next (i + 1) end (Map.insert x i seen) x'
 
 -----------------------------------
 
