@@ -20,5 +20,4 @@ main = hspec $
       speak [2, 0, 1, 7, 4, 14, 18] 2020 `shouldBe` 496
 
     it "example 2" $
-      -- speak [0, 3, 6] 30000000 `shouldBe` 175594
-      speak [2, 0, 1, 7, 4, 14, 18] 30000000 `shouldBe` 0
+      speak [2, 0, 1, 7, 4, 14, 18] 30000000 `shouldBe` 883
