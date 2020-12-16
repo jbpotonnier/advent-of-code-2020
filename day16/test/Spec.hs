@@ -2,7 +2,6 @@ module Main (main) where
 
 import Aoc
 import Test.Hspec
-import Text.Megaparsec (errorBundlePretty)
 
 main :: IO ()
 main = hspec $ do

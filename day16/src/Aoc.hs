@@ -33,7 +33,7 @@ notesP :: Parser Notes
 notesP = do
   fields <- fieldsP
   ticket <- yourTicketP
-  void $ newline
+  void newline
   nearbyTickets <- nearbyTicketsP
   pure $ Notes fields ticket nearbyTickets
   where
@@ -47,7 +47,7 @@ notesP = do
       firstRange <- rangeP
       void $ string " or "
       secondRange <- rangeP
-      void $ newline
+      void newline
       pure $ Field fieldName [firstRange, secondRange]
 
     rangeP :: Parser Range
@@ -60,19 +60,19 @@ notesP = do
     yourTicketP :: Parser Ticket
     yourTicketP = do
       void $ string "your ticket:"
-      void $ newline
+      void newline
       ticketP
 
     nearbyTicketsP :: Parser [Ticket]
     nearbyTicketsP = do
       void $ string "nearby tickets:"
-      void $ newline
+      void newline
       manyTill ticketP eof
 
     ticketP :: Parser Ticket
     ticketP = do
       numbers <- numbersP
-      void $ newline
+      void newline
       pure $ Ticket numbers
 
     numbersP :: Parser [Int]
