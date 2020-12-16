@@ -49,6 +49,9 @@ main = hspec $ do
       validTicketsInNotes notes
         `shouldBe` [Ticket [7, 3, 47]]
 
+    it "rotate" $ do
+      rotate [1 :: Int, 2, 3] `shouldBe` [2, 3, 1]
+
     it "field order" $ do
       Right notes <- readInput "./test/field_order_example.txt"
       (fmap name . findFieldOrdersInNotes) notes

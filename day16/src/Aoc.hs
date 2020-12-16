@@ -1,5 +1,4 @@
 {-# LANGUAGE NamedFieldPuns #-}
-{-# LANGUAGE TemplateHaskell #-}
 
 module Aoc
   ( module Aoc,
@@ -34,14 +33,27 @@ findFieldOrdersInNotes note@Notes {fields} =
   findFieldOrders fields (validTicketsInNotes note)
 
 findFieldOrders :: [Field] -> [Ticket] -> [Field]
-findFieldOrders fields validTickets =
-  head' [perm | perm <- permutations fields, perm `isValidForAll` validTickets]
+findFieldOrders fields validTickets = search (isValid validTickets) fields
   where
-    isValidForAll :: [Field] -> [Ticket] -> Bool
-    isValidForAll fs = all (isValidFor fs)
+    isValid :: [Ticket] -> [Field] -> Bool
+    isValid ts fs = all (isValidForTicket fs) ts
 
-    isValidFor :: [Field] -> Ticket -> Bool
-    isValidFor fs (Ticket ns) = and $ zipWith isFieldValid fs ns
+search :: ([Field] -> Bool) -> [Field] -> [Field]
+search isPermValid = go []
+  where
+    go acc = \case
+      [] -> acc
+      allFs@(f : fs)
+        | isPermValid (acc ++ [f]) -> go (acc ++ [f]) fs
+        | otherwise -> go acc (rotate allFs)
+
+rotate :: [a] -> [a]
+rotate = \case
+  [] -> []
+  x : xs -> xs ++ [x]
+
+isValidForTicket :: [Field] -> Ticket -> Bool
+isValidForTicket fs (Ticket ns) = and $ zipWith isFieldValid fs ns
 
 validTicketsInNotes :: Notes -> [Ticket]
 validTicketsInNotes Notes {fields, nearbyTickets} =
