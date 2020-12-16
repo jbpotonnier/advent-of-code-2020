@@ -22,6 +22,7 @@ common common-options
                      , vector
                      , array
                      , megaparsec
+                     , memoize
 
   
   mixins:              base hiding (Prelude)

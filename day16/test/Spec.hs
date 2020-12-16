@@ -43,3 +43,18 @@ main = hspec $ do
 
       Right starNotes <- readInput "./test/input.txt"
       sum (findInvalidInNotes starNotes) `shouldBe` 20060
+
+    it "valid tickets" $ do
+      Right notes <- readInput "./test/example.txt"
+      validTicketsInNotes notes
+        `shouldBe` [Ticket [7, 3, 47]]
+
+    it "field order" $ do
+      Right notes <- readInput "./test/field_order_example.txt"
+      (fmap name . findFieldOrdersInNotes) notes
+        `shouldBe` ["row", "class", "seat"]
+
+    it "field order star 2" $ do
+      Right notes <- readInput "./test/input.txt"
+      (fmap name . findFieldOrdersInNotes) notes
+        `shouldBe` []

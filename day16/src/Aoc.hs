@@ -1,4 +1,5 @@
 {-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 module Aoc
   ( module Aoc,
@@ -19,14 +20,38 @@ data Notes = Notes
   }
   deriving (Show, Eq)
 
-newtype Ticket = Ticket [Int]
-  deriving (Show, Eq)
-
 data Range = Range {start :: Int, end :: Int}
   deriving (Show, Eq)
 
 data Field = Field {name :: Text, ranges :: [Range]}
   deriving (Show, Eq)
+
+newtype Ticket = Ticket [Int]
+  deriving (Show, Eq)
+
+findFieldOrdersInNotes :: Notes -> [Field]
+findFieldOrdersInNotes note@Notes {fields} =
+  findFieldOrders fields (validTicketsInNotes note)
+
+findFieldOrders :: [Field] -> [Ticket] -> [Field]
+findFieldOrders fields validTickets =
+  head' [perm | perm <- permutations fields, perm `isValidForAll` validTickets]
+  where
+    isValidForAll :: [Field] -> [Ticket] -> Bool
+    isValidForAll fs = all (isValidFor fs)
+
+    isValidFor :: [Field] -> Ticket -> Bool
+    isValidFor fs (Ticket ns) = and $ zipWith isFieldValid fs ns
+
+validTicketsInNotes :: Notes -> [Ticket]
+validTicketsInNotes Notes {fields, nearbyTickets} =
+  filter isTicketValid nearbyTickets
+  where
+    isTicketValid t = null (findInvalid fields t)
+
+findInvalidInNotes :: Notes -> [Int]
+findInvalidInNotes Notes {fields, nearbyTickets} =
+  concatMap (findInvalid fields) nearbyTickets
 
 isInRange :: Range -> Int -> Bool
 isInRange Range {start, end} n = start <= n && n <= end
@@ -39,11 +64,9 @@ findInvalid fields (Ticket ns) =
   filter (not . isValid) ns
   where
     isValid n = or [isFieldValid f n | f <- fields]
-    isFieldValid Field {ranges} n = or [isInRange r n | r <- ranges]
 
-findInvalidInNotes :: Notes -> [Int]
-findInvalidInNotes Notes {fields, nearbyTickets} =
-  concatMap (findInvalid fields) nearbyTickets
+isFieldValid :: Field -> Int -> Bool
+isFieldValid Field {ranges} n = or [isInRange r n | r <- ranges]
 
 notesP :: Parser Notes
 notesP = do
@@ -112,8 +135,8 @@ intP = readInt . toText <$> Parsec.some digitChar
 readInt :: Text -> Int
 readInt = fromJust . readMaybe . toString
 
--- head' :: [c] -> c
--- head' = fromJust . viaNonEmpty head
+head' :: [c] -> c
+head' = fromJust . viaNonEmpty head
 
 -- headMay :: [b] -> Maybe b
 -- headMay = viaNonEmpty head
