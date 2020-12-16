@@ -1,3 +1,5 @@
+{-# LANGUAGE NamedFieldPuns #-}
+
 module Aoc
   ( module Aoc,
   )
@@ -26,8 +28,22 @@ data Range = Range {start :: Int, end :: Int}
 data Field = Field {name :: Text, ranges :: [Range]}
   deriving (Show, Eq)
 
+isInRange :: Range -> Int -> Bool
+isInRange Range {start, end} n = start <= n && n <= end
+
 readInput :: FilePath -> IO (Either (ParseErrorBundle Text Void) Notes)
 readInput path = parse notesP path <$> readFileText path
+
+findInvalid :: [Field] -> Ticket -> [Int]
+findInvalid fields (Ticket ns) =
+  filter (not . isValid) ns
+  where
+    isValid n = or [isFieldValid f n | f <- fields]
+    isFieldValid Field {ranges} n = or [isInRange r n | r <- ranges]
+
+findInvalidInNotes :: Notes -> [Int]
+findInvalidInNotes Notes {fields, nearbyTickets} =
+  concatMap (findInvalid fields) nearbyTickets
 
 notesP :: Parser Notes
 notesP = do

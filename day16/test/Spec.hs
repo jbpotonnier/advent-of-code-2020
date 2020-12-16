@@ -6,12 +6,8 @@ import Test.Hspec
 main :: IO ()
 main = hspec $ do
   describe "Aoc" $ do
-    it "Parse" $ do
-      -- Left e <- readInput "./test/example.txt"
-      -- putStrLn $ errorBundlePretty e
-      -- pending
-      
-      Right notes <- readInput "./test/example.txt"
+    it "parse" $ do
+      Right notes <- readInput "./test/better_example.txt"
       notes
         `shouldBe` Notes
           { fields =
@@ -40,3 +36,10 @@ main = hspec $ do
                 Ticket [38, 6, 12]
               ]
           }
+
+    it "first star" $ do
+      Right notes <- readInput "./test/example.txt"
+      findInvalidInNotes notes `shouldBe` [4, 55, 12]
+
+      Right starNotes <- readInput "./test/input.txt"
+      sum (findInvalidInNotes starNotes) `shouldBe` 20060
