@@ -6,8 +6,58 @@ where
 import Data.List (maximum, minimum)
 import qualified Data.Set as Set
 
-countActive :: Set a -> Int
-countActive = Set.size
+hyperTransform :: Set (Int, Int, Int, Int) -> Set (Int, Int, Int, Int)
+hyperTransform coords =
+  fromList
+    [ (r, c, z, w)
+      | r <- range rowBounds,
+        c <- range colBounds,
+        z <- range zBounds,
+        w <- range wBounds,
+        computeActivity (r, c, z, w)
+    ]
+  where
+    computeActivity c =
+      let activeNeighborsCount = countNeighbors c
+       in if isActive c coords
+            then activeNeighborsCount == 2 || activeNeighborsCount == 3
+            else activeNeighborsCount == 3
+
+    countNeighbors = length . filter (`isActive` coords) . hyperNeighbors
+
+    range (s, e) = [s - 1 .. e + 1]
+
+    rowBounds =
+      let rs = Set.map (\(r, _, _, _) -> r) coords
+       in (minimum rs, maximum rs)
+
+    colBounds =
+      let cs = Set.map (\(_, c, _, _) -> c) coords
+       in (minimum cs, maximum cs)
+
+    zBounds =
+      let zs = Set.map (\(_, _, z, _) -> z) coords
+       in (minimum zs, maximum zs)
+
+    wBounds =
+      let ws = Set.map (\(_, _, w, _) -> w) coords
+       in (minimum ws, maximum ws)
+
+hyperNeighbors :: (Int, Int, Int, Int) -> [(Int, Int, Int, Int)]
+hyperNeighbors (r, c, z, w) =
+  [(r + dr, c + dc, z + dz, w + dw) | (dr, dc, dz, dw) <- hyperDirections]
+
+hyperDirections :: [(Int, Int, Int, Int)]
+hyperDirections =
+  [ d
+    | let ds = [-1, 0, 1],
+      dr <- ds,
+      dc <- ds,
+      dz <- ds,
+      dw <- ds,
+      let d = (dr, dc, dz, dw),
+      d /= (0, 0, 0, 0)
+  ]
 
 transform :: Set (Int, Int, Int) -> Set (Int, Int, Int)
 transform coords =
@@ -41,9 +91,6 @@ transform coords =
       let zs = Set.map (\(_, _, z) -> z) coords
        in (minimum zs, maximum zs)
 
-isActive :: Ord a => a -> Set a -> Bool
-isActive p coords = p `Set.member` coords
-
 neighbors :: (Int, Int, Int) -> [(Int, Int, Int)]
 neighbors (r, c, z) = [(r + dr, c + dc, z + dz) | (dr, dc, dz) <- directions]
 
@@ -57,6 +104,12 @@ directions =
       let d = (dr, dc, dz),
       d /= (0, 0, 0)
   ]
+
+isActive :: Ord a => a -> Set a -> Bool
+isActive p coords = p `Set.member` coords
+
+countActive :: Set a -> Int
+countActive = Set.size
 
 showLayer :: Set (Int, Int) -> Text
 showLayer coords =
@@ -73,23 +126,36 @@ layer zIndex =
   Set.map (\(x, y, _) -> (x, y))
     . Set.filter (\(_, _, z) -> z == zIndex)
 
-readSpace :: Text -> Set (Int, Int, Int)
-readSpace = toSpace . fmap readLine . lines
-  where
-    toSpace :: [[Int]] -> Set (Int, Int, Int)
-    toSpace =
-      fromList
-        . mconcat
-        . fmap (\(i, r) -> [(i, c, 0) | c <- r])
-        . enumerate
+readHyperSpace :: Text -> Set (Int, Int, Int, Int)
+readHyperSpace = toHyperSpace . readLines
 
-    readLine :: Text -> [Int]
-    readLine =
-      fmap fst
-        . filter snd
-        . enumerate
-        . mapMaybe readCube
-        . toString
+readSpace :: Text -> Set (Int, Int, Int)
+readSpace = toSpace . readLines
+
+readLines :: Text -> [[Int]]
+readLines = fmap readLine . lines
+
+toHyperSpace :: [[Int]] -> Set (Int, Int, Int, Int)
+toHyperSpace =
+  fromList
+    . mconcat
+    . fmap (\(i, r) -> [(i, c, 0, 0) | c <- r])
+    . enumerate
+
+toSpace :: [[Int]] -> Set (Int, Int, Int)
+toSpace =
+  fromList
+    . mconcat
+    . fmap (\(i, r) -> [(i, c, 0) | c <- r])
+    . enumerate
+
+readLine :: Text -> [Int]
+readLine =
+  fmap fst
+    . filter snd
+    . enumerate
+    . mapMaybe readCube
+    . toString
 
 showCube :: Bool -> Text
 showCube = \case

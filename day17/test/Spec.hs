@@ -53,6 +53,26 @@ main = hspec $ do
       let transformed6 = iterate transform initial !! 6
       countActive transformed6 `shouldBe` 247
 
+    it "hyper transform" $ do
+      let initial = readHyperSpace ".#.\n..#\n###-n"
+      let transformed6 = iterate hyperTransform initial !! 6
+      countActive transformed6 `shouldBe` 848
+
+    it "star 2" $ do
+      let initial =
+            readHyperSpace . unlines $
+              [ "...#..#.",
+                "..##.##.",
+                "..#.....",
+                "....#...",
+                "#.##...#",
+                "####..##",
+                "...##.#.",
+                "#.#.#..."
+              ]
+      let transformed6 = iterate hyperTransform initial !! 6
+      countActive transformed6 `shouldBe` 1392
+
 printLayer :: MonadIO m => Int -> Set (Int, Int, Int) -> m ()
 printLayer z coords = do
   putTextLn $ "z=" <> show z
