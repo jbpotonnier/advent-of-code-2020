@@ -42,17 +42,7 @@ findFieldOrdersInNotes note@Notes {fields} =
 
 findFieldOrders :: [Field] -> [Ticket] -> [Field]
 findFieldOrders fields validTickets =
-  solutionAsList . search . eliminate $ possible fields validTickets
-
-search :: Eq a => Vector (Vector a) -> Vector (Vector a)
-search vs
-  | isSolution vs = vs
-  | otherwise =
-    let candidateIndex = V.minIndexBy (comparing V.length) vs
-     in search . eliminate $ assign vs candidateIndex
-
-assign :: Vector (Vector a) -> Int -> Vector (Vector a)
-assign vs i = vs V.// [(i, V.singleton (V.head (vs V.! i)))]
+  solutionAsList . converge  eliminate $ possible fields validTickets
 
 solutionAsList :: Vector (Vector a) -> [a]
 solutionAsList = toList . V.map V.head
@@ -108,6 +98,10 @@ isFieldValid :: Field -> Int -> Bool
 isFieldValid Field {ranges} n = or [isInRange r n | r <- ranges]
 
 ---------------------------------------
+
+converge :: Eq t => (t -> t) -> t -> t
+converge f x = let res = f x in if res == x then res else converge f res
+
 
 enumerate :: [b] -> [(Int, b)]
 enumerate = zip [0 ..]
