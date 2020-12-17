@@ -21,6 +21,8 @@ common common-options
                      , text
                      , vector
                      , array
+                     , megaparsec
+                     , memoize
 
   
   mixins:              base hiding (Prelude)
@@ -48,6 +50,7 @@ common common-options
                        LambdaCase
                        OverloadedStrings
                        RecordWildCards
+                       NamedFieldPuns
                        ScopedTypeVariables
                        StandaloneDeriving
                        TupleSections

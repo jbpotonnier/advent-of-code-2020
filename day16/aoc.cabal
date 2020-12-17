@@ -50,6 +50,7 @@ common common-options
                        LambdaCase
                        OverloadedStrings
                        RecordWildCards
+                       NamedFieldPuns
                        ScopedTypeVariables
                        StandaloneDeriving
                        TupleSections
