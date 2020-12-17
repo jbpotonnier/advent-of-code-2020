@@ -5,7 +5,10 @@ module Aoc
   )
 where
 
+import Data.List (foldl)
 import Data.Maybe (fromJust)
+import Data.Vector (Vector)
+import qualified Data.Vector as V
 import Text.Megaparsec
 import qualified Text.Megaparsec as Parsec
 import Text.Megaparsec.Char
@@ -25,41 +28,36 @@ data Range = Range {start :: Int, end :: Int}
 data Field = Field {name :: Text, ranges :: [Range]}
   deriving (Show, Eq)
 
-newtype Ticket = Ticket [Int]
-  deriving (Show, Eq)
+type Ticket = Vector Int
 
 findFieldOrdersInNotes :: Notes -> [Field]
 findFieldOrdersInNotes note@Notes {fields} =
   findFieldOrders fields (validTicketsInNotes note)
 
 findFieldOrders :: [Field] -> [Ticket] -> [Field]
-findFieldOrders fields validTickets = search (isValid validTickets) fields
+findFieldOrders fields validTickets = reverse $ search 0 [] fields
   where
-    isValid :: [Ticket] -> [Field] -> Bool
-    isValid ts fs = all (isValidForTicket fs) ts
-
-search :: ([Field] -> Bool) -> [Field] -> [Field]
-search isPermValid = go []
-  where
-    go acc = \case
+    search :: Int -> [Field] -> [Field] -> [Field]
+    search i acc = \case
       [] -> acc
-      allFs@(f : fs)
-        | isPermValid (acc ++ [f]) -> go (acc ++ [f]) fs
-        | otherwise -> go acc (rotate allFs)
+      f : fs ->
+        if f `isValidAt` i
+          then foldl (search (i + 1)) (f : acc) [fs]
+          else search i acc fs
 
-rotate :: [a] -> [a]
-rotate = \case
-  [] -> []
-  x : xs -> xs ++ [x]
+    isValidAt :: Field -> Int -> Bool
+    isValidAt f i = all (isFieldValid f) (ticketValuesAt validTickets i)
 
-isValidForTicket :: [Field] -> Ticket -> Bool
-isValidForTicket fs (Ticket ns) = and $ zipWith isFieldValid fs ns
+ticketValuesAt :: [Ticket] -> Int -> [Int]
+ticketValuesAt tickets i = (V.! i) <$> tickets
 
 validTicketsInNotes :: Notes -> [Ticket]
 validTicketsInNotes Notes {fields, nearbyTickets} =
   filter isTicketValid nearbyTickets
   where
     isTicketValid t = null (findInvalid fields t)
+
+--------------------------------------------
 
 findInvalidInNotes :: Notes -> [Int]
 findInvalidInNotes Notes {fields, nearbyTickets} =
@@ -68,24 +66,25 @@ findInvalidInNotes Notes {fields, nearbyTickets} =
 isInRange :: Range -> Int -> Bool
 isInRange Range {start, end} n = start <= n && n <= end
 
-readInput :: FilePath -> IO (Either (ParseErrorBundle Text Void) Notes)
-readInput path = parse notesP path <$> readFileText path
-
 findInvalid :: [Field] -> Ticket -> [Int]
-findInvalid fields (Ticket ns) =
-  filter (not . isValid) ns
+findInvalid fields = filter (not . isValid) . toList
   where
     isValid n = or [isFieldValid f n | f <- fields]
 
 isFieldValid :: Field -> Int -> Bool
 isFieldValid Field {ranges} n = or [isInRange r n | r <- ranges]
 
+---------------------------------------
+
+readInput :: FilePath -> IO (Either (ParseErrorBundle Text Void) Notes)
+readInput path = parse notesP path <$> readFileText path
+
 notesP :: Parser Notes
 notesP = do
   fields <- fieldsP
   ticket <- yourTicketP
   void newline
-  nearbyTickets <- nearbyTicketsP
+  nearbyTickets <- fromList <$> nearbyTicketsP
   pure $ Notes fields ticket nearbyTickets
   where
     fieldsP :: Parser [Field]
@@ -124,7 +123,7 @@ notesP = do
     ticketP = do
       numbers <- numbersP
       void newline
-      pure $ Ticket numbers
+      pure $ fromList numbers
 
     numbersP :: Parser [Int]
     numbersP = intP `sepBy1` ","

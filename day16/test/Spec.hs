@@ -28,12 +28,12 @@ main = hspec $ do
                     ranges = [Range {start = 13, end = 40}, Range {start = 45, end = 50}]
                   }
               ],
-            ticket = Ticket [7, 1, 14],
+            ticket = fromList [7, 1, 14],
             nearbyTickets =
-              [ Ticket [7, 3, 47],
-                Ticket [40, 4, 50],
-                Ticket [55, 2, 20],
-                Ticket [38, 6, 12]
+              [ fromList [7, 3, 47],
+                fromList [40, 4, 50],
+                fromList [55, 2, 20],
+                fromList [38, 6, 12]
               ]
           }
 
@@ -47,10 +47,7 @@ main = hspec $ do
     it "valid tickets" $ do
       Right notes <- readInput "./test/example.txt"
       validTicketsInNotes notes
-        `shouldBe` [Ticket [7, 3, 47]]
-
-    it "rotate" $ do
-      rotate [1 :: Int, 2, 3] `shouldBe` [2, 3, 1]
+        `shouldBe` [fromList [7, 3, 47]]
 
     it "field order" $ do
       Right notes <- readInput "./test/field_order_example.txt"
