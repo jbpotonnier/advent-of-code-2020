@@ -1,7 +1,9 @@
 module Main (main) where
 
 import Aoc
+import qualified Data.Text as T
 import Test.Hspec
+import qualified Data.Vector as V
 
 main :: IO ()
 main = hspec $ do
@@ -55,6 +57,40 @@ main = hspec $ do
         `shouldBe` ["row", "class", "seat"]
 
     it "field order star 2" $ do
-      Right notes <- readInput "./test/input.txt"
+      Right notes@Notes {..} <- readInput "./test/input.txt"
+
+      let expected =
+            [ "arrival platform",
+              "departure station",
+              "departure track",
+              "type",
+              "class",
+              "departure location",
+              "arrival track",
+              "duration",
+              "departure platform",
+              "zone",
+              "row",
+              "departure time",
+              "route",
+              "wagon",
+              "seat",
+              "departure date",
+              "arrival station",
+              "arrival location",
+              "price",
+              "train"
+            ]
+
       (fmap name . findFieldOrdersInNotes) notes
-        `shouldBe` []
+        `shouldBe` expected
+
+      let indexes =
+            fmap fst
+              . filter (("departure" `T.isPrefixOf`) . snd)
+              . enumerate
+              $ expected
+
+      let values = (ticket V.!) <$> indexes
+      
+      product  values `shouldBe` 2843534243843

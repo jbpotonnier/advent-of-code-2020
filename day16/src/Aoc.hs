@@ -5,13 +5,13 @@ module Aoc
   )
 where
 
-import Data.List (foldl)
 import Data.Maybe (fromJust)
 import Data.Vector (Vector)
 import qualified Data.Vector as V
 import Text.Megaparsec
 import qualified Text.Megaparsec as Parsec
 import Text.Megaparsec.Char
+import qualified Text.Show
 
 type Parser = Parsec Void Text
 
@@ -23,10 +23,16 @@ data Notes = Notes
   deriving (Show, Eq)
 
 data Range = Range {start :: Int, end :: Int}
-  deriving (Show, Eq)
+  deriving (Eq)
+
+instance Show Range where
+  show Range {start, end} = mconcat ["[", show start, "-", show end, "]"]
 
 data Field = Field {name :: Text, ranges :: [Range]}
-  deriving (Show, Eq)
+  deriving (Eq)
+
+instance Show Field where
+  show Field {name, ranges} = "<" <> show name <> " " <> show ranges <> ">"
 
 type Ticket = Vector Int
 
@@ -35,18 +41,45 @@ findFieldOrdersInNotes note@Notes {fields} =
   findFieldOrders fields (validTicketsInNotes note)
 
 findFieldOrders :: [Field] -> [Ticket] -> [Field]
-findFieldOrders fields validTickets = reverse $ search 0 [] fields
-  where
-    search :: Int -> [Field] -> [Field] -> [Field]
-    search i acc = \case
-      [] -> acc
-      f : fs ->
-        if f `isValidAt` i
-          then foldl (search (i + 1)) (f : acc) [fs]
-          else search i acc fs
+findFieldOrders fields validTickets =
+  solutionAsList . search . eliminate $ possible fields validTickets
 
-    isValidAt :: Field -> Int -> Bool
-    isValidAt f i = all (isFieldValid f) (ticketValuesAt validTickets i)
+search :: Eq a => Vector (Vector a) -> Vector (Vector a)
+search vs
+  | isSolution vs = vs
+  | otherwise =
+    let candidateIndex = V.minIndexBy (comparing V.length) vs
+     in search . eliminate $ assign vs candidateIndex
+
+assign :: Vector (Vector a) -> Int -> Vector (Vector a)
+assign vs i = vs V.// [(i, V.singleton (V.head (vs V.! i)))]
+
+solutionAsList :: Vector (Vector a) -> [a]
+solutionAsList = toList . V.map V.head
+
+isSolution :: Vector (Vector a) -> Bool
+isSolution = all (\v -> V.length v == 1)
+
+eliminate :: Eq a => Vector (Vector a) -> Vector (Vector a)
+eliminate v = foldl' eliminateAt v [0 .. V.length v - 1]
+
+eliminateAt :: Eq a => Vector (Vector a) -> Int -> Vector (Vector a)
+eliminateAt vs i
+  | V.length cur == 1 =
+    let val = V.head cur
+     in V.imap (\j v -> if i /= j then V.filter (/= val) v else v) vs
+  | otherwise = vs
+  where
+    cur = vs V.! i
+
+possible :: [Field] -> [Ticket] -> Vector (Vector Field)
+possible fields validTickets = fromList [validFields i | i <- [0 .. length fields - 1]]
+  where
+    validFields i = V.fromList [f | f <- fields, isFieldValidAt f i validTickets]
+
+isFieldValidAt :: Field -> Int -> [Ticket] -> Bool
+isFieldValidAt field index validTickets =
+  all (isFieldValid field) (ticketValuesAt validTickets index)
 
 ticketValuesAt :: [Ticket] -> Int -> [Int]
 ticketValuesAt tickets i = (V.! i) <$> tickets
@@ -76,6 +109,9 @@ isFieldValid Field {ranges} n = or [isInRange r n | r <- ranges]
 
 ---------------------------------------
 
+enumerate :: [b] -> [(Int, b)]
+enumerate = zip [0 ..]
+
 readInput :: FilePath -> IO (Either (ParseErrorBundle Text Void) Notes)
 readInput path = parse notesP path <$> readFileText path
 
@@ -104,8 +140,7 @@ notesP = do
     rangeP = do
       a <- intP
       void $ string "-"
-      b <- intP
-      pure $ Range a b
+      Range a <$> intP
 
     yourTicketP :: Parser Ticket
     yourTicketP = do
@@ -139,7 +174,7 @@ intP = readInt . toText <$> Parsec.some digitChar
 -- applyTimes f n = (!! n) . iterate f
 
 -- count :: (Ord k, Foldable t) => t k -> k -> Int
--- count xs x = fromMaybe 0 (c IMap.!? x)
+-- count xs v = fromMaybe 0 (c IMap.!? v)
 --   where
 --     c = IMap.fromListWith (+) . fmap (,1) . toList $ xs
 
