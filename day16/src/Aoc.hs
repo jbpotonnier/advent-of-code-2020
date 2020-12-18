@@ -164,21 +164,9 @@ wordP = toText <$> Parsec.some letterChar
 intP :: Parser Int
 intP = readInt . toText <$> Parsec.some digitChar
 
--- applyTimes :: (c -> c) -> Int -> c -> c
--- applyTimes f n = (!! n) . iterate f
-
--- count :: (Ord k, Foldable t) => t k -> k -> Int
--- count xs v = fromMaybe 0 (c IMap.!? v)
---   where
---     c = IMap.fromListWith (+) . fmap (,1) . toList $ xs
 
 readInt :: Text -> Int
 readInt = fromJust . readMaybe . toString
 
 head' :: [c] -> c
 head' = fromJust . viaNonEmpty head
-
--- headMay :: [b] -> Maybe b
--- headMay = viaNonEmpty head
-
--- tail' :: [a] -> [a]

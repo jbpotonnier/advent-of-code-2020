@@ -118,14 +118,8 @@ count xs x = fromMaybe 0 (c Map.!? x)
   where
     c = Map.fromListWith (+) . fmap (,1) . toList $ xs
 
--- readInt :: Text -> Maybe Int
--- readInt = readMaybe . toString
-
 head' :: [c] -> c
 head' = fromJust . viaNonEmpty head
 
 headMay :: [b] -> Maybe b
 headMay = viaNonEmpty head
-
--- tail' :: [a] -> [a]
--- tail' = fromJust . viaNonEmpty tail

@@ -43,4 +43,4 @@ main = hspec $ do
     it "star 2" $ do
       instrs <- readInput "./test/input.txt"
       let ComputeState {memory} = executeProgram2 instrs
-      sum memory `shouldBe` 9879607673316
+      sum memory `shouldBe` 3435342392262

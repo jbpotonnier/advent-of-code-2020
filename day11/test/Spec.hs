@@ -59,6 +59,3 @@ main = hspec $ do
 
 readLayoutFromList :: [Text] -> Layout
 readLayoutFromList = fromJust . readLayout . unlines
-
-printLayout :: Layout -> IO ()
-printLayout = putTextLn . showLayout
