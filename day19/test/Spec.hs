@@ -2,7 +2,7 @@ module Main (main) where
 
 import Aoc
 import Test.Hspec
-import Text.Megaparsec (parseMaybe)
+import Text.Megaparsec (MonadParsec (eof), parseMaybe)
 
 main :: IO ()
 main = hspec $ do
@@ -40,5 +40,40 @@ main = hspec $ do
 
       (length . filter (accepts p)) messages `shouldBe` 195
 
+    it "star 2 : example_2_1" $ do
+      (rules, messages) <- readInput "./test/example_2_1.txt"
+      let p = mkParser rules 0
+
+      filter (accepts p) messages
+        `shouldBe` [ "bbabbbbaabaabba",
+                     "ababaaaaaabaaab",
+                     "ababaaaaabbbaba"
+                   ]
+
+    it "star 2 : example_2_2" $ do
+      (rules, messages) <- readInput "./test/example_2_2.txt"
+      let p = mkParser2 rules 0
+
+      filter (accepts p) messages
+        `shouldBe` [ "bbabbbbaabaabba",
+                     "babbbbaabbbbbabbbbbbaabaaabaaa",
+                     "aaabbbbbbaaaabaababaabababbabaaabbababababaaa",
+                     "bbbbbbbaaaabbbbaaabbabaaa",
+                     "bbbababbbbaaaaaaaabbababaaababaabab",
+                     "ababaaaaaabaaab",
+                     "ababaaaaabbbaba",
+                     "baabbaaaabbaaaababbaababb",
+                     "abbbbabbbbaaaababbbbbbaaaababb",
+                     "aaaaabbaabaaaaababaa",
+                     "aaaabbaabbaaaaaaabbbabbbaaabbaabaaa",
+                     "aabbbbbaabbbaaaaaabbbbbababaaaaabbaaabba"
+                   ]
+
+    it "star 2" $ do
+      (rules, messages) <- readInput "./test/input2.txt"
+      let p = mkParser2 rules 0
+
+      (length . filter (accepts p)) messages `shouldBe` 309
+
 accepts :: Parser String -> String -> Bool
-accepts p s = isJust $ parseMaybe p s
+accepts p s = isJust $ parseMaybe (p >> eof) s

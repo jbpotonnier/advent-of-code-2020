@@ -7,6 +7,7 @@ import Data.Map ((!))
 import Data.Maybe (fromJust)
 import qualified Data.Text as T
 import Text.Megaparsec
+import qualified Text.Megaparsec as Parsec
 import Text.Megaparsec.Char (string)
 
 data Rule
@@ -16,6 +17,32 @@ data Rule
   deriving (Show, Eq)
 
 type Parser = Parsec Void String
+
+mkParser2 :: Map Int Rule -> Int -> Parser String
+mkParser2 rules = go
+  where
+    --  0: 8 11
+    --  8: 42 | 42 8
+    -- 11: 42 31 | 42 11 31
+
+    go :: Int -> Parser String
+    go 0 = do
+      a <- Parsec.some (try p42)
+      b <- Parsec.some p31
+      if length a > length b
+        then pure $ mconcat a <> mconcat b
+        else fail "failed"
+    go ruleNumber = case rules ! ruleNumber of
+      Seq ns -> sequenceP ns
+      Or l1 l2 -> try (sequenceP l1) <|> sequenceP l2
+      One c -> string [c]
+
+    p42 = go 42
+
+    p31 = go 31
+
+    sequenceP :: [Int] -> Parser String
+    sequenceP = mconcat . fmap go
 
 mkParser :: Map Int Rule -> Int -> Parser String
 mkParser rules = go
