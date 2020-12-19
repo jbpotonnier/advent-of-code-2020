@@ -5,13 +5,12 @@ where
 
 import Data.Map ((!))
 import Data.Maybe (fromJust)
-import qualified Data.Set as Set
 import qualified Data.Text as T
 
 data Rule
-  = Simple [Int]
-  | Double [Int] [Int]
-  | Leaf Char
+  = Seq [Int]
+  | Or [Int] [Int]
+  | One Char
   deriving (Show, Eq)
 
 possibles :: Map Int Rule -> Int -> Set String
@@ -20,10 +19,10 @@ possibles rules = fromList . go
     go :: Int -> [String]
     go ruleNumber =
       case rules ! ruleNumber of
-        Simple ns -> fmap mconcat . traverse go $ ns
-        Double l1 l2 ->
+        Seq ns -> fmap mconcat . traverse go $ ns
+        Or l1 l2 ->
           (fmap mconcat . traverse go $ l1) <> (fmap mconcat . traverse go $ l2)
-        Leaf c -> [[c]]
+        One c -> [[c]]
 
 readInput :: MonadIO m => FilePath -> m (Map Int Rule, [String])
 readInput path = do
@@ -39,25 +38,25 @@ parseRules = fromList . fmap parseLine . lines
 
     parseRule :: Text -> Rule
     parseRule t
-      | ruleSep `T.isInfixOf` t = parseDouble t
-      | "\"" `T.isPrefixOf` t = parseLeaf t
-      | otherwise = parseSimple t
+      | ruleSep `T.isInfixOf` t = parseOr t
+      | "\"" `T.isPrefixOf` t = parseOne t
+      | otherwise = parseSeq t
 
-    parseDouble :: Text -> Rule
-    parseDouble t =
+    parseOr :: Text -> Rule
+    parseOr t =
       let (f, s) = splitOn ruleSep t
-       in Double (readList f) (readList s)
+       in Or (readList f) (readList s)
 
-    parseLeaf :: Text -> Rule
-    parseLeaf =
+    parseOne :: Text -> Rule
+    parseOne =
       toString
         >>> ( \case
-                ['"', c, '"'] -> Leaf c
-                o -> error $ "parseLeaf: cannot parse " <> show o
+                ['"', c, '"'] -> One c
+                o -> error $ "parseOne: cannot parse " <> show o
             )
 
-    parseSimple :: Text -> Rule
-    parseSimple = Simple . readList
+    parseSeq :: Text -> Rule
+    parseSeq = Seq . readList
 
     readList :: Text -> [Int]
     readList = fmap read' . T.splitOn " "

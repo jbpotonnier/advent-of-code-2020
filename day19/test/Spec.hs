@@ -12,13 +12,13 @@ main = hspec $ do
 
       rules
         `shouldBe` fromList
-          [ (0, Simple [4, 1, 5]),
-            (1, Double [2, 3] [3, 2]),
-            (2, Double [4, 4] [5, 5]),
-            (3, Double [4, 5] [5, 4]),
-            (4, Leaf 'a'),
-            (5, Leaf 'b'),
-            (106,Double [91] [20])
+          [ (0, Seq [4, 1, 5]),
+            (1, Or [2, 3] [3, 2]),
+            (2, Or [4, 4] [5, 5]),
+            (3, Or [4, 5] [5, 4]),
+            (4, One 'a'),
+            (5, One 'b'),
+            (106,Or [91] [20])
           ]
 
       messages `shouldBe` ["ababbb", "bababa", "abbbab", "aaabbb", "aaaabbb"]
