@@ -1,8 +1,8 @@
 module Main (main) where
 
 import Aoc
-import qualified Data.Set as Set
 import Test.Hspec
+import Text.Megaparsec (parseMaybe)
 
 main :: IO ()
 main = hspec $ do
@@ -18,7 +18,7 @@ main = hspec $ do
             (3, Or [4, 5] [5, 4]),
             (4, One 'a'),
             (5, One 'b'),
-            (106,Or [91] [20])
+            (106, Or [91] [20])
           ]
 
       messages `shouldBe` ["ababbb", "bababa", "abbbab", "aaabbb", "aaaabbb"]
@@ -26,17 +26,19 @@ main = hspec $ do
     it "match" $ do
       (rules, _) <- readInput "./test/example.txt"
 
-      let possibleMessages = possibles rules 0
+      let p = mkParser rules 0
 
-      "ababbb" `shouldSatisfy` (`Set.member` possibleMessages)
-      "abbbab" `shouldSatisfy` (`Set.member` possibleMessages)
+      "ababbb" `shouldSatisfy` accepts p
+      "abbbab" `shouldSatisfy` accepts p
 
-      "bababa" `shouldNotSatisfy` (`Set.member` possibleMessages)
-      "aaabbb" `shouldNotSatisfy` (`Set.member` possibleMessages)
+      "bababa" `shouldNotSatisfy` accepts p
+      "aaabbb" `shouldNotSatisfy` accepts p
 
     it "star 1" $ do
       (rules, messages) <- readInput "./test/input.txt"
-      let possibleMessages = possibles rules 0
+      let p = mkParser rules 0
 
-      (length . filter (`Set.member` possibleMessages)) messages
-        `shouldBe` 195
+      (length . filter (accepts p)) messages `shouldBe` 195
+
+accepts :: Parser String -> String -> Bool
+accepts p s = isJust $ parseMaybe p s

@@ -6,6 +6,8 @@ where
 import Data.Map ((!))
 import Data.Maybe (fromJust)
 import qualified Data.Text as T
+import Text.Megaparsec
+import Text.Megaparsec.Char (string)
 
 data Rule
   = Seq [Int]
@@ -13,16 +15,19 @@ data Rule
   | One Char
   deriving (Show, Eq)
 
-possibles :: Map Int Rule -> Int -> Set String
-possibles rules = fromList . go
+type Parser = Parsec Void String
+
+mkParser :: Map Int Rule -> Int -> Parser String
+mkParser rules = go
   where
-    go :: Int -> [String]
-    go ruleNumber =
-      case rules ! ruleNumber of
-        Seq ns -> fmap mconcat . traverse go $ ns
-        Or l1 l2 ->
-          (fmap mconcat . traverse go $ l1) <> (fmap mconcat . traverse go $ l2)
-        One c -> [[c]]
+    go :: Int -> Parser String
+    go ruleNumber = case rules ! ruleNumber of
+      Seq ns -> sequenceP ns
+      Or l1 l2 -> try (sequenceP l1) <|> sequenceP l2
+      One c -> string [c]
+
+    sequenceP :: [Int] -> Parser String
+    sequenceP = mconcat . fmap go
 
 readInput :: MonadIO m => FilePath -> m (Map Int Rule, [String])
 readInput path = do
