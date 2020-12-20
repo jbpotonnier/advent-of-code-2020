@@ -34,6 +34,12 @@ main = hspec $ do
       -- traverse_ (displayTransform transform) tiles
       (and . fmap (\Tile {image} -> image == (transform . transform . transform . transform) image)) tiles `shouldBe` True
 
+    fit "search" $ do
+      tiles <- readInput "./test/example.txt"
+      let initial = allPossibilities 3 tiles
+      print $ search initial
+      pending
+
 displayTransform :: MonadIO m => (Image -> Image) -> Tile -> m ()
 displayTransform g Tile {image} = do
   putTextLn $ showImage image
