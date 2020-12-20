@@ -3,7 +3,7 @@ module Aoc
   )
 where
 
-import Data.Foldable (Foldable (maximum))
+import Data.Foldable (Foldable (maximum, minimum))
 import Data.Maybe (fromJust)
 import qualified Data.Set as Set
 import qualified Data.Text as T
@@ -12,11 +12,19 @@ import qualified Text.Show
 type Image = Set (Int, Int)
 
 data Tile = Tile {tileId :: Int, image :: Image}
-  deriving (Eq)
 
 instance Show Tile where
   show Tile {tileId, image} =
     "Tile " <> show tileId <> ":\n" <> (toString . showImage) image
+
+flipX :: Image -> Image
+flipX = Set.map (first (9 -))
+
+flipY :: Image -> Image
+flipY = Set.map (second (9 -))
+
+rotate :: Image -> Image
+rotate = Set.map (\(x, y) -> (negate y, x))
 
 neighbors :: (Int, Int) -> [(Int, Int)]
 neighbors (x, y) = [(x + dx, y + dy) | (dx, dy) <- directions]
@@ -29,13 +37,18 @@ showImage :: Image -> Text
 showImage image =
   unlines
     [ mconcat
-        [showPixel (isActive (x, y) image) | y <- [0 .. maxY]]
-      | x <- [0 .. maxX]
+        [showPixel (isActive (x, y) image) | x <- [minX .. maxX]]
+      | y <- [minY .. maxY]
     ]
   where
+    minX = minimum . Set.map fst $ image
     maxX = maximum . Set.map fst $ image
+
+    minY = minimum . Set.map snd $ image
     maxY = maximum . Set.map snd $ image
+
     isActive p coords = p `Set.member` coords
+
     showPixel = bool "." "#"
 
 readInput :: MonadIO f => FilePath -> f [Tile]
@@ -57,7 +70,7 @@ readImage = toImage . fmap (readLine . toString)
     toImage =
       fromList
         . mconcat
-        . fmap (\(y, xs) -> [(y, x) | x <- xs])
+        . fmap (\(y, xs) -> [(x, y) | x <- xs])
         . enumerate
 
     readLine :: String -> [Int]
