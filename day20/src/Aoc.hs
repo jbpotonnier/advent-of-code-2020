@@ -32,13 +32,11 @@ search = fmap solutionAsMap . go . elimination
       | isFailure m = []
       | otherwise = foldl' (\acc x -> acc ++ (go . elimination) x) [] (nexts m)
 
-elimination :: Map (Int, Int) (Vector Tile) -> Map (Int, Int) (Vector Tile)
 elimination = converge (eliminate isSame isCompatible neighbors)
 
--- nexts :: Ord k => Map k (Vector a) -> [Map k (Vector a)]
+nexts :: Ord b => Map b (Vector Tile) -> [Map b (Vector Tile)]
 nexts m = (`assign` m) <$> nextAssignations m
 
--- nextAssignations :: Map b (Vector a) -> [b]
 nextAssignations =
   fmap fst
     . sortOn (Set.size . snd)

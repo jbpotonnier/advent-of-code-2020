@@ -44,21 +44,27 @@ main = hspec $ do
 
     it "search" $ do
       tiles <- readInput "./test/example.txt"
-      let initial = allPossibilities 3 tiles
+      let sz = 3
+          initial = allPossibilities sz tiles
           solutions = search initial
 
-          cs = corners . fmap tileId <$> solutions
+          cs = corners sz . fmap tileId <$> solutions
 
       product <$> cs `shouldBe` [20899048083289,20899048083289,20899048083289,20899048083289,20899048083289,20899048083289,20899048083289,20899048083289,20899048083289]
 
+
     it "star 1" $ do
       tiles <- readInput "./test/input.txt"
-      let initial = allPossibilities 12 tiles
-          solutions = search initial
+      let sz = 12
+          initial = allPossibilities sz tiles
+          solution = take 1 $ search initial -- so long...
+          
+          cs = corners sz . fmap tileId <$> solution
 
-          cs = corners . fmap tileId <$> solutions
+      print cs
 
-      product <$> cs `shouldBe` []
+      product <$> cs `shouldBe` [32287787075651]
+
 
     it "debug" $ do
       tiles <- readInput "./test/example.txt"
@@ -88,5 +94,6 @@ displayTransform g Tile {image} = do
   putTextLn $ showImage (g image)
   putTextLn "---\n"
 
-corners :: (Ord a, Ord b1, Num a, Num b1) => Map (a, b1) b2 -> [b2]
-corners m = fmap (m Map.!) [(0, 0), (0, 2), (2, 2), (2, 0)]
+corners :: (Ord a, Num a) => a -> Map (a, a) b -> [b]
+corners n m  = fmap (m Map.!) [(0, 0), (0, s), (s, s), (s, 0)]
+  where s = n - 1
