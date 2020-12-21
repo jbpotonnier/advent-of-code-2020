@@ -8,8 +8,6 @@ import qualified Data.Map.Strict as Map
 import Data.Maybe (fromJust)
 import qualified Data.Set as Set
 import qualified Data.Text as T
-import Data.Vector (Vector)
-import qualified Data.Vector as Vector
 import qualified Text.Show
 
 type Image = Set (Int, Int)
@@ -18,13 +16,13 @@ data Tile = Tile {tileId :: Int, image :: Image}
   deriving (Eq)
 
 instance Show Tile where
-  show Tile {tileId, image} = 
+  show Tile {tileId, image} =
     "Tile " <> show tileId <> ":\n" <> (toString . showImage) image
 
 isSame :: Tile -> Tile -> Bool
 isSame a b = tileId a == tileId b
 
-search :: Map (Int, Int) (Vector Tile) -> [Map (Int, Int) Tile]
+search :: Map (Int, Int) [Tile] -> [Map (Int, Int) Tile]
 search = fmap solutionAsMap . go . elimination
   where
     go m
@@ -32,37 +30,39 @@ search = fmap solutionAsMap . go . elimination
       | isFailure m = []
       | otherwise = foldl' (\acc x -> acc ++ (go . elimination) x) [] (nexts m)
 
+elimination :: Map (Int, Int) [Tile] -> Map (Int, Int) [Tile]
 elimination = converge (eliminate isSame isCompatible neighbors)
 
-nexts :: Ord b => Map b (Vector Tile) -> [Map b (Vector Tile)]
+nexts :: Ord b => Map b [Tile] -> [Map b [Tile]]
 nexts m = (`assign` m) <$> nextAssignations m
 
+nextAssignations :: Map b [Tile] -> [b]
 nextAssignations =
   fmap fst
     . sortOn (Set.size . snd)
     . fmap (second (Set.fromList . fmap tileId . toList))
-    . filter (\(_, v) -> Vector.length  v > 1)
+    . filter (\(_, xs) -> length xs > 1)
     . Map.toList
 
-solutionAsMap :: Map k (Vector a) -> Map k a
-solutionAsMap = fmap Vector.head
+solutionAsMap :: Map k [a] -> Map k a
+solutionAsMap = fmap head'
 
-assign :: Ord k => k -> Map k (Vector a) -> Map k (Vector a)
-assign = Map.adjust (Vector.singleton . Vector.head)
+assign :: Ord k => k -> Map k [a] -> Map k [a]
+assign = Map.adjust (take 1)
 
-isSolution :: Map k (Vector a) -> Bool
-isSolution = all (\v -> Vector.length v == 1)
+isSolution :: Map k [a] -> Bool
+isSolution = all (\xs -> length xs == 1)
 
-isFailure :: Map k (Vector a) -> Bool
-isFailure = any (\v -> Vector.length v == 0)
+isFailure :: Map k [a] -> Bool
+isFailure = any null
 
 eliminate ::
   Ord k =>
   (t -> t -> Bool) ->
   ((k, t) -> (k, t) -> Bool) ->
   (k -> [k]) ->
-  Map k (Vector t) ->
-  Map k (Vector t)
+  Map k [t] ->
+  Map k [t]
 eliminate samePred isNbCompatible nbs m = foldl' (eliminateAt samePred isNbCompatible nbs) m (Map.keys m)
 
 eliminateAt ::
@@ -70,16 +70,16 @@ eliminateAt ::
   (t -> t -> Bool) ->
   ((k, t) -> (k, t) -> Bool) ->
   (k -> [k]) ->
-  Map k (Vector t) ->
+  Map k [t] ->
   k ->
-  Map k (Vector t)
+  Map k [t]
 eliminateAt samePred isNbCompatible nbs m i
   -- value is assigned
-  | Vector.length cur == 1 =
-    let val = Vector.head cur
-     in Map.mapWithKey (\j vect -> if i /= j then Vector.filter (not . samePred val) vect else vect) m
+  | length cur == 1 =
+    let val = head' cur
+     in Map.mapWithKey (\j xs -> if i /= j then filter (not . samePred val) xs else xs) m
   | otherwise =
-    Map.adjust (Vector.filter hasCompatibleNbs) i m
+    Map.adjust (filter hasCompatibleNbs) i m
   where
     cur = m Map.! i
 
@@ -121,15 +121,15 @@ diff (x1, y1) (x2, y2) = (x1 - x2, y1 - y2)
 
 ------------------
 
-allPossibilities :: Int -> [Tile] -> Map (Int, Int) (Vector Tile)
+allPossibilities :: Int -> [Tile] -> Map (Int, Int) [Tile]
 allPossibilities probSize tiles =
   fromList [((x, y), possibles) | x <- [0 .. probSize - 1], y <- [0 .. probSize - 1]]
   where
     possibles = mconcat . map allTransformations $ tiles
 
-allTransformations :: Tile -> Vector Tile
+allTransformations :: Tile -> [Tile]
 allTransformations tile =
-  fromList [tile {image = g (image tile)} | g <- transformations]
+  [tile {image = g (image tile)} | g <- transformations]
   where
     transformations = do
       a <- [id, flipX, flipY]
