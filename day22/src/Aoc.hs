@@ -13,36 +13,37 @@ data Game = Game
   }
   deriving (Show)
 
+play :: Game -> Game
+play = head' . dropWhile (not . isFinished) . iterate step
+  where
+    isFinished :: Game -> Bool
+    isFinished Game {player1, player2} = Seq.null player1 || Seq.null player2
+
+    step :: Game -> Game
+    step game@Game {player1, player2} =
+      case (player1, player2) of
+        (Empty, _) -> game
+        (_, Empty) -> game
+        (c1 :<| c1s, c2 :<| c2s)
+          | c1 > c2 ->
+            Game
+              { player1 = c1s <> fromList [c1, c2],
+                player2 = c2s
+              }
+          | otherwise ->
+            Game
+              { player1 = c1s,
+                player2 = c2s <> fromList [c2, c1]
+              }
+
+score :: Game -> Int
 score game@Game {player1, player2} =
   case (player1, player2) of
     (Empty, cs) -> compute cs
     (cs, Empty) -> compute cs
     _ -> error $ "score: game is not finished " <> show game
   where
-    compute  = sum . fmap (uncurry (*)). enumerate . Seq.reverse
-
-play :: Game -> Game
-play = head' . dropWhile (not . isFinished) . iterate step
-
-isFinished :: Game -> Bool
-isFinished Game {player1, player2} = Seq.null player1 || Seq.null player2
-
-step :: Game -> Game
-step game@Game {player1, player2} =
-  case (player1, player2) of
-    (Empty, _) -> game
-    (_, Empty) -> game
-    (c1 :<| c1s, c2 :<| c2s)
-      | c1 > c2 ->
-        Game
-          { player1 = c1s <> fromList [c1, c2],
-            player2 = c2s
-          }
-      | otherwise ->
-        Game
-          { player1 = c1s,
-            player2 = c2s <> fromList [c2, c1]
-          }
+    compute = sum . fmap (uncurry (*)) . enumerate . Seq.reverse
 
 enumerate :: Seq b -> Seq (Int, b)
 enumerate s = Seq.zip (fromList [1 .. Seq.length s]) s
