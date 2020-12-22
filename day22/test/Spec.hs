@@ -33,5 +33,5 @@ main = hspec $ do
     it "star 2 example" $ do
       (score . snd . play2) example `shouldBe` 291
 
-    x it "star 2 " $ do
+    xit "star 2 " $ do
       (score . snd . play2) input `shouldBe` 0

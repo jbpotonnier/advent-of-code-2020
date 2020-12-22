@@ -17,16 +17,16 @@ data Player = P1 | P2
   deriving (Show, Eq)
 
 play2 :: Game -> (Player, Game) -- (winner, game)
-play2 g =
-  let endGame@Game {player1, player2} =
-        head' . dropWhile (not . isFinished) . iterate step $ g
+play2 initGame =
+  let endGame@Game {player1, player2} = go initGame
    in case (player1, player2) of
         (Empty, _) -> (P2, endGame)
         (_, Empty) -> (P1, endGame)
         _ -> error "Game should be finished"
   where
-    isFinished :: Game -> Bool
-    isFinished Game {player1, player2} = Seq.null player1 || Seq.null player2
+    go g
+      | isFinished g = g
+      | otherwise = go (step g)
 
     step :: Game -> Game
     step game@Game {player1, player2} =
@@ -42,6 +42,9 @@ play2 g =
             if c1 > c2
               then Game {player1 = c1s <> fromList [c1, c2], player2 = c2s}
               else Game {player1 = c1s, player2 = c2s <> fromList [c2, c1]}
+
+    isFinished :: Game -> Bool
+    isFinished Game {player1, player2} = Seq.null player1 || Seq.null player2
 
 play :: Game -> Game
 play = head' . dropWhile (not . isFinished) . iterate step
@@ -78,51 +81,5 @@ score game@Game {player1, player2} =
 enumerate :: Seq b -> Seq (Int, b)
 enumerate s = Seq.zip (fromList [1 .. Seq.length s]) s
 
------------------------------------
-
--- applyTimes :: (c -> c) -> Int -> c -> c
--- applyTimes f n = (!! n) . iterate f
-
--- count :: (Ord k, Foldable t) => t k -> k -> Int
--- count xs x = fromMaybe 0 (c IMap.!? x)
---   where
---     c = IMap.fromListWith (+) . fmap (,1) . toList $ xs
-
--- readInt :: Text -> Maybe Int
--- readInt = readMaybe . toString
-
 head' :: [c] -> c
 head' = fromJust . viaNonEmpty head
-
--- headMay :: [b] -> Maybe b
--- headMay = viaNonEmpty head
-
--- tail' :: [a] -> [a]
-
--- search :: Eq a => Vector (Vector a) -> Vector (Vector a)
--- search vs
---  | isSolution vs = vs
---  | otherwise =
---    let candidateIndex = V.minIndexBy (comparing V.length) vs
---     in search . eliminate $ assign vs candidateIndex
-
--- assign :: Vector (Vector a) -> Int -> Vector (Vector a)
--- assign vs i = vs V.// [(i, V.singleton (V.head (vs V.! i)))]
-
--- solutionAsList :: Vector (Vector a) -> [a]
--- solutionAsList = toList . V.map V.head
-
--- isSolution :: Vector (Vector a) -> Bool
--- isSolution = all (\v -> V.length v == 1)
-
--- eliminate :: Eq a => Vector (Vector a) -> Vector (Vector a)
--- eliminate v = foldl' eliminateAt v [0 .. V.length v - 1]
-
--- eliminateAt :: Eq a => Vector (Vector a) -> Int -> Vector (Vector a)
--- eliminateAt vs i
---   | V.length cur == 1 =
---     let val = V.head cur
---      in V.imap (\j v -> if i /= j then V.filter (/= val) v else v) vs
---   | otherwise = vs
---   where
---     cur = vs V.! i
