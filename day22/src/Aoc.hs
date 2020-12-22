@@ -6,42 +6,44 @@ where
 import Data.Maybe (fromJust)
 import Data.Sequence (Seq (Empty, (:<|)))
 import qualified Data.Sequence as Seq
+import qualified Data.Set as Set
 
 data Game = Game
   { player1 :: Seq Int,
     player2 :: Seq Int
   }
-  deriving (Show)
+  deriving (Show, Ord, Eq)
 
 data Player = P1 | P2
   deriving (Show, Eq)
 
 play2 :: Game -> (Player, Game) -- (winner, game)
 play2 initGame =
-  let endGame@Game {player1, player2} = go initGame
+  let endGame@Game {player1, player2} = go Set.empty initGame
    in case (player1, player2) of
         (Empty, _) -> (P2, endGame)
         (_, Empty) -> (P1, endGame)
         _ -> error "Game should be finished"
   where
-    go g
+    go seen g
       | isFinished g = g
-      | otherwise = go (step g)
-
-    step :: Game -> Game
-    step game@Game {player1, player2} =
-      case (player1, player2) of
-        (Empty, _) -> game
-        (_, Empty) -> game
-        (c1 :<| c1s, c2 :<| c2s)
-          | Seq.length c1s >= c1 && Seq.length c2s >= c2 ->
-            case play2 Game {player1 = c1s, player2 = c2s} of
-              (P1, _) -> Game {player1 = c1s <> fromList [c1, c2], player2 = c2s}
-              (P2, _) -> Game {player1 = c1s, player2 = c2s <> fromList [c2, c1]}
-          | otherwise ->
-            if c1 > c2
-              then Game {player1 = c1s <> fromList [c1, c2], player2 = c2s}
-              else Game {player1 = c1s, player2 = c2s <> fromList [c2, c1]}
+      | Set.member g seen = g {player2 = Seq.empty}
+      | otherwise = go (Set.insert g seen) (step g)
+      where
+        step :: Game -> Game
+        step game@Game {player1, player2} =
+          case (player1, player2) of
+            (Empty, _) -> game
+            (_, Empty) -> game
+            (c1 :<| c1s, c2 :<| c2s)
+              | Seq.length c1s >= c1 && Seq.length c2s >= c2 ->
+                case play2 Game {player1 = Seq.take c1 c1s, player2 = Seq.take c2 c2s} of
+                  (P1, _) -> Game {player1 = c1s <> fromList [c1, c2], player2 = c2s}
+                  (P2, _) -> Game {player1 = c1s, player2 = c2s <> fromList [c2, c1]}
+              | otherwise ->
+                if c1 > c2
+                  then Game {player1 = c1s <> fromList [c1, c2], player2 = c2s}
+                  else Game {player1 = c1s, player2 = c2s <> fromList [c2, c1]}
 
     isFinished :: Game -> Bool
     isFinished Game {player1, player2} = Seq.null player1 || Seq.null player2
