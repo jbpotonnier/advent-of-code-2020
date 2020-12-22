@@ -13,6 +13,36 @@ data Game = Game
   }
   deriving (Show)
 
+data Player = P1 | P2
+  deriving (Show, Eq)
+
+play2 :: Game -> (Player, Game) -- (winner, game)
+play2 g =
+  let endGame@Game {player1, player2} =
+        head' . dropWhile (not . isFinished) . iterate step $ g
+   in case (player1, player2) of
+        (Empty, _) -> (P2, endGame)
+        (_, Empty) -> (P1, endGame)
+        _ -> error "Game should be finished"
+  where
+    isFinished :: Game -> Bool
+    isFinished Game {player1, player2} = Seq.null player1 || Seq.null player2
+
+    step :: Game -> Game
+    step game@Game {player1, player2} =
+      case (player1, player2) of
+        (Empty, _) -> game
+        (_, Empty) -> game
+        (c1 :<| c1s, c2 :<| c2s)
+          | Seq.length c1s >= c1 && Seq.length c2s >= c2 ->
+            case play2 Game {player1 = c1s, player2 = c2s} of
+              (P1, _) -> Game {player1 = c1s <> fromList [c1, c2], player2 = c2s}
+              (P2, _) -> Game {player1 = c1s, player2 = c2s <> fromList [c2, c1]}
+          | otherwise ->
+            if c1 > c2
+              then Game {player1 = c1s <> fromList [c1, c2], player2 = c2s}
+              else Game {player1 = c1s, player2 = c2s <> fromList [c2, c1]}
+
 play :: Game -> Game
 play = head' . dropWhile (not . isFinished) . iterate step
   where

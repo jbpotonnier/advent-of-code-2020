@@ -1,7 +1,7 @@
 module Main (main) where
 
 import Aoc
-import Test.Hspec (describe, hspec, it, shouldBe)
+import Test.Hspec (xit, describe, hspec, it, shouldBe)
 
 example :: Game
 example =
@@ -29,3 +29,9 @@ main = hspec $ do
     it "star 1" $ do
       score (play example) `shouldBe` 306
       score (play input) `shouldBe` 32856
+
+    it "star 2 example" $ do
+      (score . snd . play2) example `shouldBe` 291
+
+    x it "star 2 " $ do
+      (score . snd . play2) input `shouldBe` 0
