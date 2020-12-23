@@ -10,6 +10,24 @@ import Data.Maybe (fromJust)
 import qualified Data.Set as Set
 import qualified Data.Text as T
 
+isSolution :: Foldable t => t (Set a) -> Bool
+isSolution = all (\s -> Set.size s == 1)
+
+toSolution :: Map k (Set a) -> [(k, a)]
+toSolution = Map.toList . fmap (Set.elemAt 0)
+
+eliminate :: (Eq a, Ord k) => Map k (Set a) -> Map k (Set a)
+eliminate m = foldl' eliminateAt m (Map.keys m)
+
+eliminateAt :: (Eq a, Ord k) => Map k (Set a) -> k -> Map k (Set a)
+eliminateAt m i
+  | Set.size cur == 1 =
+    let val = Set.elemAt 0 cur
+     in Map.mapWithKey (\j s -> if i /= j then Set.filter (/= val) s else s) m
+  | otherwise = m
+  where
+    cur = m Map.! i
+
 inerts :: ([Text], Map Text (Set Text)) -> [Text]
 inerts (ingredients, m) =
   let withoutAllergen = fromList ingredients `Set.difference` (mconcat . Map.elems $ m)
@@ -41,52 +59,3 @@ stripSuffix s = fromJust . T.stripSuffix s
 
 converge :: Eq t => (t -> t) -> t -> t
 converge f x = let res = f x in if res == x then res else converge f res
-
------------------------------------
-
--- applyTimes :: (c -> c) -> Int -> c -> c
--- applyTimes f n = (!! n) . iterate f
-
--- count :: (Ord k, Foldable t) => t k -> k -> Int
--- count xs x = fromMaybe 0 (c IMap.!? x)
---   where
---     c = IMap.fromListWith (+) . fmap (,1) . toList $ xs
-
--- readInt :: Text -> Maybe Int
--- readInt = readMaybe . toString
-
--- head' :: [c] -> c
--- head' = fromJust . viaNonEmpty head
-
--- headMay :: [b] -> Maybe b
--- headMay = viaNonEmpty head
-
--- tail' :: [a] -> [a]
-
--- search :: Eq a => Vector (Vector a) -> Vector (Vector a)
--- search vs
---  | isSolution vs = vs
---  | otherwise =
---    let candidateIndex = V.minIndexBy (comparing V.length) vs
---     in search . eliminate $ assign vs candidateIndex
-
--- assign :: Vector (Vector a) -> Int -> Vector (Vector a)
--- assign vs i = vs V.// [(i, V.singleton (V.head (vs V.! i)))]
-
--- solutionAsList :: Vector (Vector a) -> [a]
--- solutionAsList = toList . V.map V.head
-
--- isSolution :: Vector (Vector a) -> Bool
--- isSolution = all (\v -> V.length v == 1)
-
--- eliminate :: Eq a => Vector (Vector a) -> Vector (Vector a)
--- eliminate v = foldl' eliminateAt v [0 .. V.length v - 1]
-
--- eliminateAt :: Eq a => Vector (Vector a) -> Int -> Vector (Vector a)
--- eliminateAt vs i
---   | V.length cur == 1 =
---     let val = V.head cur
---      in V.imap (\j v -> if i /= j then V.filter (/= val) v else v) vs
---   | otherwise = vs
---   where
---     cur = vs V.! i

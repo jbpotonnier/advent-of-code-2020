@@ -1,8 +1,7 @@
 module Main (main) where
 
 import Aoc
-import qualified Data.Map as Map
-import Data.Set (difference, member)
+import qualified Data.Text as T
 import Test.Hspec
 
 main :: IO ()
@@ -41,3 +40,18 @@ main = hspec $ do
       inp <- readInput "./test/input.txt"
       length (inerts inp) `shouldBe` 2659
 
+    it "eliminate" $ do
+      (_, m) <- readInput "./test/example.txt"
+      eliminate m
+        `shouldBe` fromList
+          [ ("dairy", fromList ["mxmxvkd"]),
+            ("fish", fromList ["sqjhc"]),
+            ("soy", fromList ["fvjkl"])
+          ]
+
+    it "star 2" $ do
+      (_, m) <- readInput "./test/input.txt"
+      let sol = converge eliminate m
+      sol `shouldSatisfy` isSolution
+      (T.intercalate "," . fmap snd . sort . toSolution $ sol)
+        `shouldBe` "rcqb,cltx,nrl,qjvvcvz,tsqpn,xhnk,tfqsb,zqzmzl"
