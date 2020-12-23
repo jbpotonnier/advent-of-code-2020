@@ -1,22 +1,48 @@
+{-# LANGUAGE TupleSections #-}
+
 module Aoc
   ( module Aoc,
   )
 where
 
-readInput path = mapMaybe (readLine . toString) . lines <$> readFileText path
-  where
-    readLine l = Just ()
+import qualified Data.Map as Map
+import Data.Maybe (fromJust)
+import qualified Data.Set as Set
+import qualified Data.Text as T
+
+inerts :: ([Text], Map Text (Set Text)) -> [Text]
+inerts (ingredients, m) =
+  let withoutAllergen = fromList ingredients `Set.difference` (mconcat . Map.elems $ m)
+   in filter (`Set.member` withoutAllergen) ingredients
+
+readInput :: MonadIO f => FilePath -> f ([Text], Map Text (Set Text))
+readInput path = do
+  ls <- fmap readLine . lines <$> readFileText path
+  let ingredients = mconcat . fmap fst $ ls
+      m =
+        Map.fromListWith Set.intersection
+          . mconcat
+          . fmap (\(is, als) -> fmap (second Set.fromList . (,is)) als)
+          $ ls
+  pure (ingredients, m)
+
+readLine :: Text -> ([Text], [Text])
+readLine =
+  bimap words (T.splitOn ", " . stripSuffix ")")
+    . splitOn "(contains "
+
+splitOn :: Text -> Text -> (Text, Text)
+splitOn s t = case T.splitOn s t of
+  [a, b] -> (a, b)
+  _ -> error $ "splitOn: cannot split " <> show t <> " on " <> show s
+
+stripSuffix :: Text -> Text -> Text
+stripSuffix s = fromJust . T.stripSuffix s
+
+converge :: Eq t => (t -> t) -> t -> t
+converge f x = let res = f x in if res == x then res else converge f res
 
 -----------------------------------
--- splitOn :: Text -> Text -> (Text, Text)
--- splitOn s t = case T.splitOn s t of
---   [a, b] -> (a, b)
---   _ -> error $ "splitOn: cannot split " <> show t <> " on " <> show s
-
-
--- converge :: Eq t => (t -> t) -> t -> t
--- converge f x = let res = f x in if res == x then res else converge f res
-
 
 -- applyTimes :: (c -> c) -> Int -> c -> c
 -- applyTimes f n = (!! n) . iterate f
@@ -64,4 +90,3 @@ readInput path = mapMaybe (readLine . toString) . lines <$> readFileText path
 --   | otherwise = vs
 --   where
 --     cur = vs V.! i
-
